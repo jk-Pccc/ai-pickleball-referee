@@ -11,5 +11,4 @@ if __name__ == "__main__":
         workers=8,
         val=True,  # 是否验证
         # optimizer="AdamW",
-
     )
