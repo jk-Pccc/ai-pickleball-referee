@@ -1,12 +1,14 @@
-# -*- coding: utf-8 -*-
-from ultralytics import YOLO
-import cv2
-import numpy as np
-from collections import deque
 import os
+from collections import deque
+
+import cv2
 
 # 确保中文显示正常
 import matplotlib.pyplot as plt
+import numpy as np
+
+from ultralytics import YOLO
+
 plt.rcParams["font.family"] = ["SimHei", "WenQuanYi Micro Hei", "Heiti TC"]
 
 # 1. 加载模型
@@ -53,9 +55,9 @@ while cap.isOpened():
     if not ret:
         print("视频处理完成或无法读取帧")
         break
-    
+
     frame_count += 1
-    
+
     # 运行跟踪（修复imgsz参数）
     results = model.track(
         source=frame,
@@ -65,12 +67,12 @@ while cap.isOpened():
         imgsz=imgsz,  # 修复：使用正确格式的imgsz参数
         persist=True,  # 启用持久化跟踪
         show=False,  # 不显示默认窗口
-        tracker="botsort.yaml"  # 使用botsort跟踪器
+        tracker="botsort.yaml",  # 使用botsort跟踪器
     )
-    
+
     # 处理结果
     annotated_frame = results[0].plot()
-    
+
     # 获取检测框和跟踪ID（如果有）
     boxes = results[0].boxes
     if boxes is not None and len(boxes) > 0:
@@ -78,36 +80,33 @@ while cap.isOpened():
         box = boxes[0]
         x1, y1, x2, y2 = box.xyxy[0].tolist()
         center_x, center_y = int((x1 + x2) / 2), int((y1 + y2) / 2)
-        
+
         # 添加到轨迹历史
         track_history.append((center_x, center_y))
-        
+
         # 绘制轨迹
         for i in range(1, len(track_history)):
-            if track_history[i-1] is None or track_history[i] is None:
+            if track_history[i - 1] is None or track_history[i] is None:
                 continue
             # 使用渐变色绘制轨迹
             thickness = int(np.clip(len(track_history) - i, 1, 3))
-            cv2.line(annotated_frame, track_history[i-1], track_history[i], 
-                    (0, 255 - i * 5, i * 5), thickness)
-    
+            cv2.line(annotated_frame, track_history[i - 1], track_history[i], (0, 255 - i * 5, i * 5), thickness)
+
     # 显示帧率和帧数
     fps_info = f"FPS: {fps:.2f}"
     frame_info = f"Frame: {frame_count}"
-    cv2.putText(annotated_frame, fps_info, (10, 30), 
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-    cv2.putText(annotated_frame, frame_info, (10, 60), 
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-    
+    cv2.putText(annotated_frame, fps_info, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+    cv2.putText(annotated_frame, frame_info, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+
     # 显示结果
     cv2.imshow("匹克球检测与跟踪", annotated_frame)
-    
+
     # 按'q'退出，按'space'暂停
     key = cv2.waitKey(1) & 0xFF
-    if key == ord('q'):
+    if key == ord("q"):
         print("用户退出")
         break
-    elif key == ord(' '):
+    elif key == ord(" "):
         print("视频暂停")
         cv2.waitKey(0)  # 等待任意键继续
 
