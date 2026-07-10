@@ -1,0 +1,36 @@
+# 模型权重与导出文件
+*.pt
+*.pth
+*.onnx
+*.engine
+*.mlmodel
+*.torchscript
+
+# 数据集与运行结果
+datasets/
+runs/
+weights/
+outputs/
+predict/
+train/
+val/
+
+# 虚拟环境与缓存
+venv/
+(yolo)/
+env/
+__pycache__/
+*.pyc
+
+# IDE与系统缓存
+.idea/
+.vscode/
+*.log
+*.DS_Store
+Thumbs.db
+
+# 压缩包大文件
+*.zip
+*.tar
+*.gz
+*.rar
