@@ -1,6 +1,6 @@
 import os
 
-# 定义图片和标签文件的路径（注意：您输入的"lables"可能是"labels"的拼写错误，若实际文件夹名不同请修改）
+# 定义图片和标签文件的路径（注意：您输入的"labels"可能是"labels"的拼写错误，若实际文件夹名不同请修改）
 images_dir = "DATABASES/diy_database2/train/images"
 labels_dir = "DATABASES/diy_database2/train/labels"  # 若实际是"labels"请修改此处
 
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     # 执行前提醒用户确认
     print("注意：此操作将删除所有没有对应txt标签的图片，建议先备份数据！")
     confirm = input("是否继续？(y/n): ").strip().lower()
-    if confirm == 'y':
+    if confirm == "y":
         delete_unmatched_images()
         print("处理完成")
     else:
