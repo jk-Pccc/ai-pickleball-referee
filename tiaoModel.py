@@ -8,5 +8,5 @@ if __name__ == "__main__":
         iterations=300,  # iterations参数在tune()方法中是有效的
         optimizer="AdamW",
         imgsz=640,
-        batch=2
+        batch=2,
     )
