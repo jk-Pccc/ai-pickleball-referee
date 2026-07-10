@@ -180,17 +180,17 @@ model.train(
     lr0=0.001,
     lrf=0.001,
     cos_lr=True,
-    freeze=[0, 1],        # 冻结前 2 层
-    box=9.0,              # 强化小目标框定位
-    cls=1.5,              # 分类损失权重
-    dfl=2.0,              # 分布式焦点损失
-    single_cls=True,      # 单类别（匹克球）
+    freeze=[0, 1],  # 冻结前 2 层
+    box=9.0,  # 强化小目标框定位
+    cls=1.5,  # 分类损失权重
+    dfl=2.0,  # 分布式焦点损失
+    single_cls=True,  # 单类别（匹克球）
     mosaic=0.8,
     mixup=0.15,
     copy_paste=0.2,
-    close_mosaic=5,       # 最后 5 轮关闭马赛克
+    close_mosaic=5,  # 最后 5 轮关闭马赛克
     patience=25,
-    amp=True,             # 混合精度训练
+    amp=True,  # 混合精度训练
 )
 ```
 
