@@ -1,13 +1,17 @@
-import cv2
-import numpy as np
-from ultralytics import YOLO
 import os
 from collections import deque
+
+import cv2
+import numpy as np
+
+from ultralytics import YOLO
 
 
 class PickleballScorer:
     def __init__(self):
-        self.model_path = r"Y:\deeplearning\ultralytics-8.3.163\runs\detect\train86_pk_far_small_30ep_backup\weights\best.pt"
+        self.model_path = (
+            r"Y:\deeplearning\ultralytics-8.3.163\runs\detect\train86_pk_far_small_30ep_backup\weights\best.pt"
+        )
         self.video_path = r"Y:\deeplearning\ultralytics-8.3.163\TESTVIDEO\pkvideo4.mp4"
 
         # 初始化模型+-
@@ -61,7 +65,7 @@ class PickleballScorer:
         self.minimap_border_thickness = 2  # 小地图边框粗细
 
     def select_court_boundaries(self, frame):
-        """手动选择球场边界"""
+        """手动选择球场边界."""
         points = []
 
         def mouse_callback(event, x, y, flags, param):
@@ -86,9 +90,9 @@ class PickleballScorer:
 
         while True:
             key = cv2.waitKey(1) & 0xFF
-            if key == ord('c') and len(points) == 4:
+            if key == ord("c") and len(points) == 4:
                 break
-            elif key == ord('r'):
+            elif key == ord("r"):
                 points = []
                 frame = clone.copy()
                 cv2.imshow("Select Court Boundaries", frame)
@@ -97,7 +101,7 @@ class PickleballScorer:
         return points
 
     def calculate_midline(self, court_coords):
-        """计算球场中线"""
+        """计算球场中线."""
         left_points = [p for p in court_coords if p[0] < self.display_width // 2]
         right_points = [p for p in court_coords if p[0] >= self.display_width // 2]
 
@@ -111,7 +115,7 @@ class PickleballScorer:
         return midline_x
 
     def is_point_in_polygon(self, point, polygon):
-        """判断点是否在多边形内"""
+        """判断点是否在多边形内."""
         x, y = point
         n = len(polygon)
         inside = False
@@ -131,7 +135,7 @@ class PickleballScorer:
         return inside
 
     def smooth_position(self, new_position):
-        """使用移动平均平滑球的位置"""
+        """使用移动平均平滑球的位置."""
         if new_position is None:
             return None
 
@@ -148,7 +152,7 @@ class PickleballScorer:
         return (int(avg_x), int(avg_y))
 
     def is_valid_movement(self, prev_pos, curr_pos):
-        """检查移动是否合理"""
+        """检查移动是否合理."""
         if prev_pos is None or curr_pos is None:
             return True
 
@@ -156,8 +160,7 @@ class PickleballScorer:
         return distance <= self.max_jump_distance
 
     def process_ball_detection(self, results, frame):
-        """处理球检测结果 - 优化版本"""
-        has_ball = False
+        """处理球检测结果 - 优化版本."""
         best_ball = None
         best_confidence = 0
 
@@ -185,33 +188,39 @@ class PickleballScorer:
 
             # 检查移动是否合理
             if not self.is_valid_movement(self.last_ball_position, smoothed_position):
-                print(f"检测到异常移动，忽略当前帧检测")
+                print("检测到异常移动，忽略当前帧检测")
                 self.ball_lost_frames += 1
                 if self.ball_lost_frames > self.max_lost_frames:
                     self.current_ball_position = None
                 return
 
             self.current_ball_position = smoothed_position
-            has_ball = True
             self.ball_lost_frames = 0  # 重置丢失计数器
 
             # 绘制球检测框
-            cv2.rectangle(frame,
-                          (int(ball_xyxy[0]), int(ball_xyxy[1])),
-                          (int(ball_xyxy[2]), int(ball_xyxy[3])),
-                          (0, 255, 0), 2)
-            cv2.putText(frame, f"Ball: {best_confidence:.2f}",
-                        (int(ball_xyxy[0]), int(ball_xyxy[1]) - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            cv2.rectangle(
+                frame, (int(ball_xyxy[0]), int(ball_xyxy[1])), (int(ball_xyxy[2]), int(ball_xyxy[3])), (0, 255, 0), 2
+            )
+            cv2.putText(
+                frame,
+                f"Ball: {best_confidence:.2f}",
+                (int(ball_xyxy[0]), int(ball_xyxy[1]) - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 255, 0),
+                2,
+            )
 
             # 绘制球当前位置标记
             cv2.circle(frame, smoothed_position, 5, (0, 0, 255), -1)
 
             # 判断球在哪半场
-            in_left = smoothed_position[0] < self.midline_x and self.is_point_in_polygon(smoothed_position,
-                                                                                         self.court_coords)
-            in_right = smoothed_position[0] >= self.midline_x and self.is_point_in_polygon(smoothed_position,
-                                                                                           self.court_coords)
+            in_left = smoothed_position[0] < self.midline_x and self.is_point_in_polygon(
+                smoothed_position, self.court_coords
+            )
+            in_right = smoothed_position[0] >= self.midline_x and self.is_point_in_polygon(
+                smoothed_position, self.court_coords
+            )
             self.ball_in_left = in_left
             self.ball_in_right = in_right
 
@@ -221,31 +230,43 @@ class PickleballScorer:
                 curr_x, curr_y = smoothed_position
 
                 # 检测球是否从一方飞到另一方
-                if (last_x < self.midline_x and curr_x >= self.midline_x and
-                        self.is_point_in_polygon((last_x, last_y), self.court_coords) and
-                        self.is_point_in_polygon((curr_x, curr_y), self.court_coords)):
-                    self.last_hit_side = 'A'
+                if (
+                    last_x < self.midline_x
+                    and curr_x >= self.midline_x
+                    and self.is_point_in_polygon((last_x, last_y), self.court_coords)
+                    and self.is_point_in_polygon((curr_x, curr_y), self.court_coords)
+                ):
+                    self.last_hit_side = "A"
                     print("A方击球到B方场地")
 
-                elif (last_x >= self.midline_x and curr_x < self.midline_x and
-                      self.is_point_in_polygon((last_x, last_y), self.court_coords) and
-                      self.is_point_in_polygon((curr_x, curr_y), self.court_coords)):
-                    self.last_hit_side = 'B'
+                elif (
+                    last_x >= self.midline_x
+                    and curr_x < self.midline_x
+                    and self.is_point_in_polygon((last_x, last_y), self.court_coords)
+                    and self.is_point_in_polygon((curr_x, curr_y), self.court_coords)
+                ):
+                    self.last_hit_side = "B"
                     print("B方击球到A方场地")
 
             # 更新轨迹
             self.update_trajectory(smoothed_position)
 
             # 计分判断
-            if (self.last_hit_side == 'A' and self.ball_in_right and
-                    smoothed_position[1] > self.display_height * self.scoring_zone_y):
+            if (
+                self.last_hit_side == "A"
+                and self.ball_in_right
+                and smoothed_position[1] > self.display_height * self.scoring_zone_y
+            ):
                 self.score_A += 1
                 print(f"A方得分！当前比分: A {self.score_A} - B {self.score_B}")
                 self.last_hit_side = None
                 self.reset_trajectory()
 
-            elif (self.last_hit_side == 'B' and self.ball_in_left and
-                  smoothed_position[1] > self.display_height * self.scoring_zone_y):
+            elif (
+                self.last_hit_side == "B"
+                and self.ball_in_left
+                and smoothed_position[1] > self.display_height * self.scoring_zone_y
+            ):
                 self.score_B += 1
                 print(f"B方得分！当前比分: A {self.score_A} - B {self.score_B}")
                 self.last_hit_side = None
@@ -262,7 +283,7 @@ class PickleballScorer:
         self.last_ball_position = self.current_ball_position
 
     def update_trajectory(self, current_pos):
-        """更新球轨迹 - 优化版本"""
+        """更新球轨迹 - 优化版本."""
         if not current_pos:
             return
 
@@ -277,13 +298,13 @@ class PickleballScorer:
         self.ball_trajectory.append(current_pos)
 
     def reset_trajectory(self):
-        """重置轨迹"""
+        """重置轨迹."""
         self.ball_trajectory.clear()
         self.position_buffer.clear()
         self.ball_lost_frames = 0
 
     def scale_coordinates_to_minimap(self, points):
-        """将坐标缩放到小地图尺寸"""
+        """将坐标缩放到小地图尺寸."""
         scaled_points = []
         for point in points:
             if point is None:
@@ -296,7 +317,7 @@ class PickleballScorer:
         return scaled_points
 
     def draw_minimap(self, frame):
-        """在右上角绘制小地图，包含球场边框和球轨迹"""
+        """在右上角绘制小地图，包含球场边框和球轨迹."""
         # 计算小地图位置
         minimap_x = self.display_width - self.minimap_width - self.minimap_offset_x
         minimap_y = self.minimap_offset_y
@@ -305,11 +326,13 @@ class PickleballScorer:
         minimap_bg = np.zeros((self.minimap_height, self.minimap_width, 3), dtype=np.uint8)
 
         # 绘制小地图边框
-        cv2.rectangle(minimap_bg,
-                      (0, 0),
-                      (self.minimap_width, self.minimap_height),
-                      self.minimap_border_color,
-                      self.minimap_border_thickness)
+        cv2.rectangle(
+            minimap_bg,
+            (0, 0),
+            (self.minimap_width, self.minimap_height),
+            self.minimap_border_color,
+            self.minimap_border_thickness,
+        )
 
         # 缩放球场坐标到小地图尺寸
         scaled_court_coords = self.scale_coordinates_to_minimap(self.court_coords)
@@ -321,17 +344,11 @@ class PickleballScorer:
 
             # 绘制小地图中的中线
             scaled_midline_x = int(self.midline_x * self.minimap_scale)
-            cv2.line(minimap_bg,
-                     (scaled_midline_x, 0),
-                     (scaled_midline_x, self.minimap_height),
-                     (255, 0, 0), 1)
+            cv2.line(minimap_bg, (scaled_midline_x, 0), (scaled_midline_x, self.minimap_height), (255, 0, 0), 1)
 
             # 绘制小地图中的得分线
             scaled_scoring_y = int(self.display_height * self.scoring_zone_y * self.minimap_scale)
-            cv2.line(minimap_bg,
-                     (0, scaled_scoring_y),
-                     (self.minimap_width, scaled_scoring_y),
-                     (0, 0, 255), 1)
+            cv2.line(minimap_bg, (0, scaled_scoring_y), (self.minimap_width, scaled_scoring_y), (0, 0, 255), 1)
 
         # 绘制小地图中的球轨迹
         if len(self.ball_trajectory) >= 2:
@@ -362,15 +379,13 @@ class PickleballScorer:
             cv2.circle(minimap_bg, scaled_ball_pos, 3, (0, 0, 255), -1)
 
         # 添加小地图标题
-        cv2.putText(minimap_bg, "Minimap", (5, 15),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+        cv2.putText(minimap_bg, "Minimap", (5, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
 
         # 将小地图叠加到主画面
-        frame[minimap_y:minimap_y + self.minimap_height,
-        minimap_x:minimap_x + self.minimap_width] = minimap_bg
+        frame[minimap_y : minimap_y + self.minimap_height, minimap_x : minimap_x + self.minimap_width] = minimap_bg
 
     def draw_court_and_info(self, frame):
-        """绘制球场、计分信息和轨迹"""
+        """绘制球场、计分信息和轨迹."""
         # 绘制球场边界
         if self.court_coords is not None:
             court_points = np.array(self.court_coords, np.int32)
@@ -378,27 +393,21 @@ class PickleballScorer:
 
             # 绘制中线
             if self.midline_x is not None:
-                cv2.line(frame,
-                         (int(self.midline_x), 0),
-                         (int(self.midline_x), self.display_height),
-                         (255, 0, 0), 2)
+                cv2.line(frame, (int(self.midline_x), 0), (int(self.midline_x), self.display_height), (255, 0, 0), 2)
 
             # 添加场地标签
-            cv2.putText(frame, "A", (int(self.midline_x) - 100, 50),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-            cv2.putText(frame, "B", (int(self.midline_x) + 50, 50),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            cv2.putText(frame, "A", (int(self.midline_x) - 100, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            cv2.putText(frame, "B", (int(self.midline_x) + 50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
             # 绘制得分区域线
             scoring_line_y = int(self.display_height * self.scoring_zone_y)
-            cv2.line(frame, (0, scoring_line_y), (self.display_width, scoring_line_y),
-                     (0, 0, 255), 2, cv2.LINE_AA)
-            cv2.putText(frame, "Scoring Line", (10, scoring_line_y - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+            cv2.line(frame, (0, scoring_line_y), (self.display_width, scoring_line_y), (0, 0, 255), 2, cv2.LINE_AA)
+            cv2.putText(frame, "Scoring Line", (10, scoring_line_y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
 
         # 显示比分
-        cv2.putText(frame, f"Score: A {self.score_A} - B {self.score_B}",
-                    (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        cv2.putText(
+            frame, f"Score: A {self.score_A} - B {self.score_B}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2
+        )
 
         # 显示球状态
         status_text = "Ball: "
@@ -412,8 +421,7 @@ class PickleballScorer:
         # 添加轨迹点数量信息
         status_text += f" | Trajectory: {len(self.ball_trajectory)} points"
 
-        cv2.putText(frame, status_text, (10, 70),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+        cv2.putText(frame, status_text, (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
 
         # 绘制球轨迹
         if len(self.ball_trajectory) >= 2:
@@ -436,16 +444,18 @@ class PickleballScorer:
                 cv2.circle(frame, start_pos, 4, (0, 255, 0), -1)  # 绿色起点
                 cv2.circle(frame, end_pos, 4, (0, 0, 255), -1)  # 红色终点
 
-                cv2.putText(frame, "Start", (start_pos[0] + 5, start_pos[1] - 5),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 1)
-                cv2.putText(frame, "End", (end_pos[0] + 5, end_pos[1] - 5),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1)
+                cv2.putText(
+                    frame, "Start", (start_pos[0] + 5, start_pos[1] - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 1
+                )
+                cv2.putText(
+                    frame, "End", (end_pos[0] + 5, end_pos[1] - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1
+                )
 
         # 绘制小地图
         self.draw_minimap(frame)
 
     def run(self):
-        """运行主程序"""
+        """运行主程序."""
         if not os.path.exists(self.video_path):
             print(f"视频文件不存在: {self.video_path}")
             return
@@ -495,7 +505,7 @@ class PickleballScorer:
                 imgsz=720,
                 tracker="botsort.yaml",
                 persist=True,
-                verbose=False  # 减少输出
+                verbose=False,  # 减少输出
             )
 
             # 处理球检测
@@ -505,46 +515,52 @@ class PickleballScorer:
             self.draw_court_and_info(frame)
 
             # 显示帧计数
-            cv2.putText(frame, f"Frame: {frame_count}", (10, self.display_height - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+            cv2.putText(
+                frame,
+                f"Frame: {frame_count}",
+                (10, self.display_height - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (255, 255, 255),
+                1,
+            )
 
             # 显示结果
             cv2.imshow("Pickleball Scorer (With Minimap)", frame)
 
             # 键盘控制
             key = cv2.waitKey(1) & 0xFF
-            if key == ord('q'):
+            if key == ord("q"):
                 break
-            elif key == ord('r'):
+            elif key == ord("r"):
                 self.score_A = 0
                 self.score_B = 0
                 self.last_hit_side = None
                 self.last_ball_position = None
                 self.reset_trajectory()
                 print("比分和轨迹已重置")
-            elif key == ord('t'):
+            elif key == ord("t"):
                 self.reset_trajectory()
                 print("轨迹已重置")
-            elif key == ord('+'):
+            elif key == ord("+"):
                 self.scoring_zone_y = min(0.9, self.scoring_zone_y + 0.05)
                 print(f"得分区域调整到: {self.scoring_zone_y:.2f}")
-            elif key == ord('-'):
+            elif key == ord("-"):
                 self.scoring_zone_y = max(0.3, self.scoring_zone_y - 0.05)
                 print(f"得分区域调整到: {self.scoring_zone_y:.2f}")
-            elif key == ord('m'):
+            elif key == ord("m"):
                 show_minimap = not show_minimap
                 print(f"小地图显示: {'开启' if show_minimap else '关闭'}")
-            elif key == ord('a'):  # A队加1分
+            elif key == ord("a"):  # A队加1分
                 self.score_A += 1
-            elif key == ord('z'):  # A队减1分
+            elif key == ord("z"):  # A队减1分
                 if self.score_A > 0:
                     self.score_A -= 1
-            elif key == ord('w'):  # B队加1分
+            elif key == ord("w"):  # B队加1分
                 self.score_B += 1
-            elif key == ord('s'):  # B队减1分
+            elif key == ord("s"):  # B队减1分
                 if self.score_B > 0:
                     self.score_B -= 1
-
 
         cap.release()
         cv2.destroyAllWindows()
