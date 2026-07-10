@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
-from ultralytics import YOLO
-import os
-import yaml
 from pathlib import Path
+
+import yaml
+
+from ultralytics import YOLO
 
 if __name__ == "__main__":
     # 1. 定义数据集配置文件路径 - 使用相对路径
@@ -11,23 +11,23 @@ if __name__ == "__main__":
     # 2. 检查并修复data.yaml文件中的路径配置
     try:
         # 读取现有的data.yaml文件
-        with open(data_yaml_path, 'r', encoding='utf-8') as f:
+        with open(data_yaml_path, encoding="utf-8") as f:
             data_config = yaml.safe_load(f)
 
         # 确保path指向正确的数据集目录
         dataset_dir = Path("datasets/Ai-pickleball.yolov11-NEW2")
-        data_config['path'] = str(dataset_dir)
+        data_config["path"] = str(dataset_dir)
 
         # 确保train、val路径正确
-        if 'train' not in data_config:
-            data_config['train'] = 'train/images'
-        if 'val' not in data_config:
-            data_config['val'] = 'val/images' if (dataset_dir / 'val/images').exists() else 'train/images'
+        if "train" not in data_config:
+            data_config["train"] = "train/images"
+        if "val" not in data_config:
+            data_config["val"] = "val/images" if (dataset_dir / "val/images").exists() else "train/images"
 
         # 保存修复后的配置
-        with open(data_yaml_path, 'w', encoding='utf-8') as f:
+        with open(data_yaml_path, "w", encoding="utf-8") as f:
             yaml.dump(data_config, f, default_flow_style=False)
-        print(f"已修复data.yaml文件，确保路径正确")
+        print("已修复data.yaml文件，确保路径正确")
     except Exception as e:
         print(f"警告: 无法修改data.yaml文件: {e}")
 
@@ -50,20 +50,17 @@ if __name__ == "__main__":
         model.train(
             # 核心数据配置
             data=data_yaml_path,
-
             # 训练参数（针对空中球优化）
             epochs=150,
             imgsz=720,
             batch=4,
             workers=0,
             val=True,
-
             # 优化器与学习率
             optimizer="AdamW",
             lr0=0.001,
             lrf=0.003,
             cos_lr=True,
-
             # 数据增强
             augment=True,
             degrees=15.0,
@@ -79,25 +76,22 @@ if __name__ == "__main__":
             mosaic=0.8,
             mixup=0.15,
             copy_paste=0.2,
-
             # 训练设置
             name="train86_pk_far_small_final4",
             exist_ok=False,
             deterministic=True,
             cache=True,
-
             # 模型设置
             box=9.0,
             cls=1.5,
             dfl=2.0,
             close_mosaic=2,
             single_cls=True,  # 如果只检测匹克球一个类别
-
             # 其他参数
             patience=12,
             save=True,
             plots=True,
-            verbose=True
+            verbose=True,
         )
         print("训练完成！")
     except Exception as e:
@@ -107,13 +101,13 @@ if __name__ == "__main__":
         # 创建临时data.yaml文件，确保路径正确
         temp_yaml_path = "temp_data.yaml"
         temp_config = {
-            'path': str(dataset_dir),
-            'train': 'train/images',
-            'val': 'val/images' if (dataset_dir / 'val/images').exists() else 'train/images',
-            'nc': 1,
-            'names': ['Pickleball']
+            "path": str(dataset_dir),
+            "train": "train/images",
+            "val": "val/images" if (dataset_dir / "val/images").exists() else "train/images",
+            "nc": 1,
+            "names": ["Pickleball"],
         }
-        with open(temp_yaml_path, 'w', encoding='utf-8') as f:
+        with open(temp_yaml_path, "w", encoding="utf-8") as f:
             yaml.dump(temp_config, f, default_flow_style=False)
         print(f"创建了临时配置文件: {temp_yaml_path}")
         # 重新训练
@@ -125,5 +119,5 @@ if __name__ == "__main__":
             workers=0,
             val=True,
             # name="train86_pk_far_small_final4",
-            exist_ok=False
+            exist_ok=False,
         )
