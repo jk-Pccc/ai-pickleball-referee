@@ -1,5 +1,6 @@
-from ultralytics import YOLO
 import torch
+
+from ultralytics import YOLO
 
 # 检查CUDA是否可用
 print(f"CUDA可用: {torch.cuda.is_available()}")
@@ -7,7 +8,7 @@ if torch.cuda.is_available():
     print(f"GPU型号: {torch.cuda.get_device_name(0)}")
 
 # 加载预训练模型
-model = YOLO('yolo11m.pt')
+model = YOLO("yolo11m.pt")
 
 # 开始训练
 results = model.train(
@@ -16,7 +17,7 @@ results = model.train(
     patience=50,
     imgsz=640,
     batch=-1,
-    optimizer='Adam',
+    optimizer="Adam",
     lr0=0.001,
     lrf=0.01,
     augment=True,
