@@ -1,6 +1,6 @@
-from ultralytics import YOLO
 import cv2
-import numpy as np
+
+from ultralytics import YOLO
 
 if __name__ == "__main__":
     # 1. 加载训练后的模型
@@ -16,7 +16,7 @@ if __name__ == "__main__":
     fps = int(cap.get(cv2.CAP_PROP_FPS))
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
     # 4. 逐帧检测+跟踪（解决断断续续）
@@ -30,7 +30,7 @@ if __name__ == "__main__":
             source=frame,
             imgsz=[640, 720, 800],  # 多尺度推理，覆盖不同距离的球
             conf=0.2,  # 进一步降低置信度阈值，捕捉远处低置信度球
-            iou=0.5,   # 降低IOU阈值，帮助跟踪器关联远处球的检测框
+            iou=0.5,  # 降低IOU阈值，帮助跟踪器关联远处球的检测框
             max_det=200,
             augment=False,  # 跟踪时关闭增强，保证速度与稳定性
             agnostic_nms=True,  # 跨类别NMS，优化小目标检测
@@ -53,10 +53,10 @@ if __name__ == "__main__":
                 cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                 # 绘制ID+置信度（标注远处球的低置信度）
                 label = f"ID:{id} Conf:{conf:.2f}"
-                cv2.putText(frame, label, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+                cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
                 # 更新轨迹，补全远处球的运动路径
-                center_x, center_y = int((x1+x2)/2), int((y1+y2)/2)
+                center_x, center_y = int((x1 + x2) / 2), int((y1 + y2) / 2)
                 if id not in trajectories:
                     trajectories[id] = []
                 trajectories[id].append((center_x, center_y))
@@ -64,12 +64,12 @@ if __name__ == "__main__":
                 if len(trajectories[id]) > 50:
                     trajectories[id].pop(0)
                 for i in range(1, len(trajectories[id])):
-                    cv2.line(frame, trajectories[id][i-1], trajectories[id][i], color, 2)
+                    cv2.line(frame, trajectories[id][i - 1], trajectories[id][i], color, 2)
 
         # 7. 显示并保存帧
         cv2.imshow("Pickleball Tracking (Far & Small)", frame)
         out.write(frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
     # 8. 释放资源
